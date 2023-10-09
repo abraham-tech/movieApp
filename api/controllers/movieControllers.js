@@ -143,21 +143,23 @@ const deleteOne = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.MOVIE_DELETE_MESSAGE + movieId);
   DeleteMovieByIdWithCallback(movieId, function (err, movie) {
+    const response = {
+      status: parseInt(process.env.OK_STATUS_CODE),
+      message: process.env.SUCCESS
+    };
     if (movie === null) {
-      res
-        .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-        .json({ message: process.env.MOVIE_NOT_FOUND });
-      return;
+      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
+      response.message = process.env.MOVIE_NOT_FOUND;
     }
     if (err) {
-      res
-        .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-        .json({ message: process.env.MOVIE_NOT_FOUND });
+
+      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
+      response.message = process.env.MOVIE_NOT_FOUND;
     }
     console.log(process.env.SUCCESS_DELETED_A_MOVIE + movieId);
     res
-      .status(parseInt(process.env.OK_STATUS_CODE))
-      .json({ [process.env.MESSAGE]: process.env.SUCCESS });
+      .status(response.status)
+      .json({ [process.env.MESSAGE]: response.message });
   });
 };
 
