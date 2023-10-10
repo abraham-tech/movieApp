@@ -79,35 +79,37 @@ const addOne = function (req, res) {
 };
 
 const partialUpdateOne = function (req, res) {
-  const movieId = req.params.movieId;
-  console.log(process.env.MOVIE_PARTIAL_UPDATE_MESSAGE + movieId);
-  findByIdAndUpdateWithCallback(
-    movieId,
-    req.body,
-    { new: true },
-    (err, movie) => {
-      if (err) {
-        console.error(err);
-        res
-          .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-          .json({ message: process.env.INTERNAL_SERVER_ERROR });
-      } else if (!movie) {
-        res
-          .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-          .json({ message: process.env.MOVIE_NOT_FOUND });
-      } else {
-        console.log(process.env.SUCCESS_PARTIAL_UPDATE_FOR_A_MOVIE + movieId);
-        res.status(parseInt(process.env.CREATED_STATUS_CODE)).json(movie);
-      }
+  const movieUpdate = function (req, res, movie, response) {
+    if (req.body.title) {
+      movie.title = req.body.title;
     }
-  );
-};
+    if (req.body.year) {
+      movie.year = req.body.year;
+    }
+    if (req.body.imdbRating) {
+      movie.imdbRating = req.body.imdbRating;
+    }
+    if (req.body.awards) {
+      movie.awards = req.body.awards;
+    }
+    saveWithCallback(movie, function (err, updatedGame) {
+      response.status = parseInt(process.env.OK_STATUS_CODE);
+      response.message = updatedGame;
+      if (err) {
+        response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
+        response.message = err;
+      }
+      res.status(response.status).json(response.message);
+    });
+  };
+  _updateOne(req, res, movieUpdate);
+}
 
 const _updateOne = function (req, res, updateMovieCallback) {
   const movieId = req.params.movieId;
   console.log(process.env.MOVIE_FULL_UPDATE_MESSAGE + movieId);
   MovieFindOneWithCallback(movieId, function (err, movie) {
-    const response = { status: 204, message: movie };
+    const response = { status: parseInt(process.env.OK_STATUS_CODE), message: movie };
     if (err) {
       response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
       response.message = err;
@@ -115,7 +117,7 @@ const _updateOne = function (req, res, updateMovieCallback) {
       response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
       response.message = { message: process.env.MOVIE_NOT_FOUND };
     }
-    if (response.status !== 204) {
+    if (response.status !== parseInt(process.env.OK_STATUS_CODE)) {
       res.status(response.status).json(response.message);
     } else {
       updateMovieCallback(req, res, movie, response);
@@ -224,7 +226,6 @@ const deleteOne = function (req, res) {
       response.message = process.env.MOVIE_NOT_FOUND;
     }
     if (err) {
-
       response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
       response.message = process.env.MOVIE_NOT_FOUND;
     }
