@@ -5,47 +5,58 @@ const {
   MovieFindOneWithCallback,
   movieFindLimitSkipExecWithCallback,
 } = require("./utils");
+const Movie = require("../data/schemas/moviesModel");
 
 const getAll = function (req, res) {
-  let offset = process.env.DEFAULT_OFFSET;
-  let count = process.env.DEFAULT_COUNT;
-  console.log(process.env.LIST_ALL_MOVIES_MESSAGE);
+  let offset = req.query.offset;
+  let count = req.query.count;
+  const response = {
+    status: parseInt(process.env.OK_STATUS_CODE),
+    message: process.env.SUCCESS
+  };
+  if (isNaN(req.query.offset) || isNaN(req.query.count)) {
+    res.status(parseInt(process.env.BAD_REQUEST_STATUS_CODE)).json({ [process.env.MESSAGE]: process.env.INVALID_COUNT_OR_OFFSET });
+    return;
+  }
   if (req.query && req.query.offset) {
     offset = parseInt(req.query.offset, process.env.BASE_TEN);
   }
   if (req.query && req.query.count) {
     offset = parseInt(req.query.count, process.env.BASE_TEN);
   }
-  movieFindLimitSkipExecWithCallback(offset, count, function (err, movies) {
-    if (err) {
-      console.error(err);
-      res
-        .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-        .json({ message: process.env.INTERNAL_SERVER_ERROR });
-    }
-    console.log(process.env.SUCCESS_RETURNED_MOVIES);
-    res.status(parseInt(process.env.OK_STATUS_CODE)).json(movies);
-  });
+
+  Movie.find().skip(offset).limit(count).exec().then(movies => {
+    response.status = parseInt(process.env.OK_STATUS_CODE);
+    response.message = movies;
+
+  }).catch(err => {
+    response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
+    response.message = err;
+
+  }).finally(() => {
+    res.status(response.status).json(response.message);
+  })
 };
 
 const getOne = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.GET_A_MOVIE_MESSAGE + movieId);
-  MovieFindOneWithCallback(movieId, function (err, movie) {
-    if (movie === null) {
-      res
-        .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-        .json({ message: process.env.MOVIE_NOT_FOUND });
-      return;
+  const response = { status: "", message: "" };
+  Movie.findById(movieId).exec().then(movie => {
+    if (!movie) {
+      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
+      response.message = { [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND };
+    } else {
+      console.log(process.env.SUCCESS_RETURNED_A_MOVIE + movieId);
+      response.status = parseInt(process.env.OK_STATUS_CODE);
+      response.message = movie;
     }
-    if (err) {
-      console.error(err);
-      res
-        .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-        .json({ message: process.env.MOVIE_NOT_FOUND });
-    }
-    console.log(process.env.SUCCESS_RETURNED_A_MOVIE + movieId);
-    res.status(parseInt(process.env.OK_STATUS_CODE)).json(movie);
+  }).catch(err => {
+    console.error(err);
+    response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
+    response.message = process.env.MOVIE_NOT_FOUND;
+  }).finally(() => {
+    res.status(response.status).json(response.message);
   });
 };
 
@@ -57,21 +68,19 @@ const addOne = function (req, res) {
   };
   console.log(process.env.MOVIE_CREATE_MESSAGE + JSON.stringify(newMovie));
 
-  MovieInsertOneWithCallback(newMovie, function (err, movie) {
-    const response = {
-      status: process.env.CREATED_STATUS_CODE,
-      message: movie,
-    };
-    if (err) {
-      console.error(process.env.ERROR_CREATING_MOVIE, err);
-      res
-        .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-        .json({ message: process.env.INTERNAL_SERVER_ERROR });
-    }
-    console.log(process.env.SUCCESS_CREATE_A_MOVIE + movie._id);
+  const response = { status: "", message: "" };
+  Movie.create(newMovie).then(movie => {
+    response.status = parseInt(process.env.CREATED_STATUS_CODE);
+    response.message = movie;
+  }).catch(err => {
+    console.error(process.env.ERROR_CREATING_MOVIE, err);
+    response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
+    response.message = { message: err }
+  }).finally(() => {
     res
-      .status(parseInt(process.env.CREATED_STATUS_CODE))
+      .status(response.status)
       .json(response.message);
+
   });
 };
 
@@ -79,20 +88,21 @@ const addOne = function (req, res) {
 const deleteOne = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.MOVIE_DELETE_MESSAGE + movieId);
-  DeleteMovieByIdWithCallback(movieId, function (err, movie) {
-    const response = {
-      status: parseInt(process.env.OK_STATUS_CODE),
-      message: process.env.SUCCESS
-    };
+  const response = { status: "", message: "" };
+  Movie.findByIdAndDelete(movieId).exec().then(movie => {
     if (movie === null) {
       response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
       response.message = process.env.MOVIE_NOT_FOUND;
+    } else {
+      response.status = parseInt(process.env.OK_STATUS_CODE);
+      response.message = movie;
     }
-    if (err) {
-      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
-      response.message = process.env.MOVIE_NOT_FOUND;
-    }
-    console.log(process.env.SUCCESS_DELETED_A_MOVIE + movieId);
+
+  }).catch(err => {
+    response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
+    response.message = err;
+
+  }).finally(() => {
     res
       .status(response.status)
       .json({ [process.env.MESSAGE]: response.message });
