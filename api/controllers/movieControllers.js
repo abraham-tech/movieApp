@@ -78,33 +78,22 @@ const addOne = function (req, res) {
   });
 };
 
+
 const partialUpdateOne = function (req, res) {
   console.log(process.env.MOVIE_PARTIAL_UPDATE_MESSAGE + req.params.movieId);
-  const movieUpdate = function (req, res, movie, response) {
-    if (req.body.title) {
-      movie.title = req.body.title;
-    }
-    if (req.body.year) {
-      movie.year = req.body.year;
-    }
-    if (req.body.imdbRating) {
-      movie.imdbRating = req.body.imdbRating;
-    }
-    if (req.body.awards) {
-      movie.awards = req.body.awards;
-    }
-    saveWithCallback(movie, function (err, updatedGame) {
-      response.status = parseInt(process.env.OK_STATUS_CODE);
-      response.message = updatedGame;
-      if (err) {
-        response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
-        response.message = err;
-      }
+
+  const onResponse = function (response) {
+    res.status(response.status).json(response.message);
+  };
+
+  // _updateOne(req, res, movieUpdate, onResponse);
+
+  _updateOne(req, res, function (req, res, movie) {
+    movieUpdate(req, res, movie, function (response) {
       res.status(response.status).json(response.message);
     });
-  };
-  _updateOne(req, res, movieUpdate);
-}
+  });
+};
 
 const _updateOne = function (req, res, updateMovieCallback) {
   const movieId = req.params.movieId;
@@ -123,41 +112,31 @@ const _updateOne = function (req, res, updateMovieCallback) {
       updateMovieCallback(req, res, movie, response);
     }
   });
-}
-
-const moviePartialUpdate = function (req, movie, response, callback) {
-  if (req.body.title) {
-    movie.title = req.body.title;
-  }
-  if (req.body.year) {
-    movie.year = req.body.year;
-  }
-  if (req.body.imdbRating) {
-    movie.imdbRating = req.body.imdbRating;
-  }
-  if (req.body.awards) {
-    movie.awards = req.body.awards;
-  }
-  saveWithCallback(movie, function (err, updatedGame) {
-    response.status = parseInt(process.env.OK_STATUS_CODE);
-    response.message = updatedGame;
-    if (err) {
-      response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
-      response.message = err;
-    }
-    callback(response);
-  });
 };
 
+
+
 const movieUpdate = function (req, res, movie, callback) {
-  movie.title = req.body.title;
-  movie.year = req.body.year;
-  movie.imdbRating = req.body.imdbRating;
-  movie.awards = req.body.awards;
+  const updateFields = {};
+  if (req.body.title) {
+    updateFields.title = req.body.title;
+  }
+  if (req.body.year) {
+    updateFields.year = req.body.year;
+  }
+  if (req.body.imdbRating) {
+    updateFields.imdbRating = req.body.imdbRating;
+  }
+  if (req.body.awards) {
+    updateFields.awards = req.body.awards;
+  }
+
+  movie.set(updateFields);
+
   saveWithCallback(movie, function (err, updatedMovie) {
     const response = {
       status: parseInt(process.env.OK_STATUS_CODE),
-      message: updatedMovie
+      message: updatedMovie,
     };
     if (err) {
       response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
@@ -168,6 +147,7 @@ const movieUpdate = function (req, res, movie, callback) {
   });
 };
 
+
 const fullUpdateOne = function (req, res) {
   console.log(process.env.MOVIE_FULL_UPDATE_MESSAGE + req.params.movieId);
   _updateOne(req, res, function (req, res, movie) {
@@ -176,30 +156,6 @@ const fullUpdateOne = function (req, res) {
     });
   });
 };
-
-
-
-// const fullUpdateOne = function (req, res) {
-//   const movieId = req.params.movieId;
-
-//   movieUpdate = function (req, res, movie, response) {
-//     movie.title = req.body.title;
-//     movie.year = req.body.year;
-//     movie.imdbRating = req.body.imdbRating;
-//     movie.awards = [];
-//     saveWithCallback(movie, function (err, updatedMovie) {
-//       const response = {}
-//       response.status = parseInt(process.env.CREATED_STATUS_CODE);
-//       response.message = updatedMovie;
-//       if (err) {
-//         response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
-//         response.message = err;
-//       }
-//       res.status(response.status).json(response.message);
-//     });
-//   }
-//   _updateOne(req, res, movieUpdate);
-// }
 
 const deleteOne = function (req, res) {
   const movieId = req.params.movieId;
