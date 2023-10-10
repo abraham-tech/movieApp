@@ -29,12 +29,10 @@ const findByIdAndUpdateWithCallback = callbackify(function (
   return Movie.findByIdAndUpdate(id, newMovie, properties);
 });
 
-const findOneAndUpdateWithCallback = callbackify(function (
-  id,
-  options,
-  filter
+const saveWithCallback = callbackify(function (
+  movie
 ) {
-  return Movie.findOneAndUpdate(id, newMovie, properties);
+  return movie.save();
 });
 
 module.exports = {
@@ -43,4 +41,5 @@ module.exports = {
   DeleteMovieByIdWithCallback,
   MovieFindOneWithCallback,
   movieFindLimitSkipExecWithCallback,
+  saveWithCallback
 };

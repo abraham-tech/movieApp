@@ -1,6 +1,7 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
 const {
+  saveWithCallback,
   findByIdAndUpdateWithCallback,
   MovieInsertOneWithCallback,
   DeleteMovieByIdWithCallback,
@@ -102,7 +103,78 @@ const partialUpdateOne = function (req, res) {
   );
 };
 
+const _updateOne = function (req, res, updateMovieCallback) {
+  const movieId = req.params.movieId;
+  console.log(process.env.MOVIE_FULL_UPDATE_MESSAGE + movieId);
+  MovieFindOneWithCallback(movieId, function (err, movie) {
+    const response = { status: 204, message: movie };
+    if (err) {
+      response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
+      response.message = err;
+    } else if (!movie) {
+      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
+      response.message = { message: process.env.MOVIE_NOT_FOUND };
+    }
+    if (response.status !== 204) {
+      res.status(response.status).json(response.message);
+    } else {
+      updateMovieCallback(req, res, movie, response);
+    }
+  });
+}
+
+const movieUpdate = function (req, res, movie, callback) {
+  movie.title = req.body.title;
+  movie.year = req.body.year;
+  movie.imdbRating = req.body.imdbRating;
+  movie.awards = [];
+  saveWithCallback(movie, function (err, updatedMovie) {
+    const response = {};
+    response.status = parseInt(process.env.CREATED_STATUS_CODE);
+    response.message = updatedMovie;
+    if (err) {
+      response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
+      response.message = err;
+    }
+    console.log(process.env.SUCCESS_FULL_UPDATE_FOR_A_MOVIE + movie._id);
+    callback(response);
+  });
+};
+
 const fullUpdateOne = function (req, res) {
+  _updateOne(req, res, function (req, res, movie) {
+    movieUpdate(req, res, movie, function (response) {
+      res.status(response.status).json(response.message);
+    });
+  });
+};
+
+
+
+// const fullUpdateOne = function (req, res) {
+//   const movieId = req.params.movieId;
+
+//   movieUpdate = function (req, res, movie, response) {
+//     movie.title = req.body.title;
+//     movie.year = req.body.year;
+//     movie.imdbRating = req.body.imdbRating;
+//     movie.awards = [];
+//     saveWithCallback(movie, function (err, updatedMovie) {
+//       const response = {}
+//       response.status = parseInt(process.env.CREATED_STATUS_CODE);
+//       response.message = updatedMovie;
+//       if (err) {
+//         response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
+//         response.message = err;
+//       }
+//       res.status(response.status).json(response.message);
+//     });
+//   }
+//   _updateOne(req, res, movieUpdate);
+// }
+
+
+const fullUpdateOne1 = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.MOVIE_FULL_UPDATE_MESSAGE + movieId);
   const newMovie = {
