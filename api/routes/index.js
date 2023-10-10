@@ -1,7 +1,8 @@
 const express = require("express");
 const router = express.Router();
 const movieControllers = require("../controllers/movieControllers");
-const awardController = require("../controllers/awardControllers");
+const awardControllers = require("../controllers/awardControllers");
+const movieUpdateControllers = require("../controllers/movieUpdateControllers");
 const {
   validateIdMiddleware,
   validateIdsMiddleware,
@@ -18,19 +19,19 @@ router
 router
   .route("/movies/:movieId")
   .get(movieControllers.getOne)
-  .put(movieControllers.fullUpdateOne)
-  .patch(movieControllers.partialUpdateOne)
+  .put(movieUpdateControllers.fullUpdateOne)
+  .patch(movieUpdateControllers.partialUpdateOne)
   .delete(movieControllers.deleteOne);
 
 router
   .route("/movies/:movieId/awards")
-  .get(awardController.awardGet)
-  .post(awardController.awardAdd)
-  .put(awardController.awardUpdate)
-  .delete(awardController.deleteAll);
+  .get(awardControllers.awardGet)
+  .post(awardControllers.awardAdd)
+  .put(awardControllers.awardUpdate)
+  .delete(awardControllers.deleteAll);
 
 router
   .route("/movies/:movieId/awards/:awardId")
-  .delete(awardController.deleteOne);
+  .delete(awardControllers.deleteOne);
 
 module.exports = router;
