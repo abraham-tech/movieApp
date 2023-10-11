@@ -1,5 +1,4 @@
 const mongoose = require("mongoose");
-const callbackify = require("util").callbackify;
 require("./schemas/moviesModel");
 require("dotenv").config();
 
@@ -20,14 +19,12 @@ mongoose.connection.on("disconnected", function () {
   console.log(process.env.MONGOOSE_DISCONNECTED);
 });
 
-const mongooseGracefulShutdown = callbackify(mongoose.disconnect);
-
 process.on("SIGINT", function () {
-  mongooseGracefulShutdown(function (err) {
-    if (err) {
-      console.error(err);
-    }
+  mongoose.disconnect().then(() => {
     console.info(process.env.MONGOOSE_DISCONNECTED_BY_APP_TERMINATION);
+  }).catch(err => {
+    console.error(err);
+  }).finally(() => {
     process.exit(0);
-  });
+  })
 });
