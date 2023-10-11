@@ -5,7 +5,7 @@ const Movie = require("../data/schemas/moviesModel");
 const awardGet = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.LIST_ALL_AWARDS_FOR_AMOVIE_MESSAGE + movieId);
-  const response = { status: "", message: "" };
+  const response = { status: 0, message: {} };
   Movie.findById(movieId).exec().then(movie => {
     if (!movie) {
       response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE)
@@ -23,22 +23,6 @@ const awardGet = function (req, res) {
       .json(response.message);
   })
 };
-
-// const findMovieAndCallCallback = (res, movieId, callback){
-//   Movie.findById(movieId).exec().then(movie => {
-//     if (movie === null) {
-//       res
-//         .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-//         .json({ message: process.env.MOVIE_NOT_FOUND });
-//     } else {
-//       _updateAwardToMovie(movie, null, res);
-//     }
-//   }).catch(err => {
-//     res
-//       .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-//       .json({ [process.env.MESSAGE]: err });
-//   })
-// }
 
 const awardAdd = function (req, res) {
   const movieId = req.params.movieId;
@@ -92,7 +76,7 @@ const awardUpdate = function (req, res) {
   };
 
   Movie.findById(movieId).exec().then(movie => {
-    if (movie === null) {
+    if (!movie) {
       res
         .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
         .json({ message: process.env.MOVIE_NOT_FOUND });
@@ -129,7 +113,7 @@ const deleteAll = function (req, res) {
 
 const _removeAwardFromMovie = function (movie, awardId, res) {
 
-  const response = { status: "", message: "" };
+  const response = { status: 0, message: {} };
 
   Movie.findByIdAndUpdate(
     { _id: new mongoose.Types.ObjectId(movie._id) },
@@ -149,7 +133,7 @@ const _removeAwardFromMovie = function (movie, awardId, res) {
 
 const _addAwardToMovie = function (movie, newAward, res) {
   movie.awards.push(newAward);
-  const response = { status: "", message: "" };
+  const response = { status: 0, message: {} };
   Movie.findByIdAndUpdate(movie._id, movie, { new: true, overwrite: true }).then(movie => {
     response.status = process.env.OK_STATUS_CODE;
     response.message = movie;
@@ -170,7 +154,7 @@ const _updateAwardToMovie = function (movie, newAward, res) {
     movie.awards = newAward;
   }
 
-  const response = { status: "", message: "" };
+  const response = { status: 0, message: {} };
   Movie.findByIdAndUpdate(movie._id, movie, { new: true, overwrite: true }).then(movie => {
     response.status = parseInt(process.env.OK_STATUS_CODE)
     response.message = movie;

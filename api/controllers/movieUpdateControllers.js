@@ -15,7 +15,7 @@ const partialUpdateOne = function (req, res) {
 const _updateOne = function (req, res, updateMovieCallback) {
     const movieId = req.params.movieId;
 
-    const response = { status: "", message: "" };
+    const response = { status: 0, message: {} };
     Movie.findById(movieId).exec().then(movie => {
         if (!movie) {
             res
@@ -49,7 +49,7 @@ const movieUpdate = function (req, res, movie, callback) {
 
     movie.set(updateFields);
 
-    const response = { status: "", message: "" };
+    const response = { status: 0, message: {} };
     movie.save().then(movie => {
         response.status = parseInt(process.env.OK_STATUS_CODE);
         response.message = movie;

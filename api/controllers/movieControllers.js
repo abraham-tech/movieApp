@@ -35,7 +35,7 @@ const getAll = function (req, res) {
 const getOne = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.GET_A_MOVIE_MESSAGE + movieId);
-  const response = { status: "", message: "" };
+  const response = { status: 0, message: {} };
   Movie.findById(movieId).exec().then(movie => {
     if (!movie) {
       response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
@@ -62,7 +62,7 @@ const addOne = function (req, res) {
   };
   console.log(process.env.MOVIE_CREATE_MESSAGE + JSON.stringify(newMovie));
 
-  const response = { status: "", message: "" };
+  const response = { status: 0, message: {} };
   Movie.create(newMovie).then(movie => {
     response.status = parseInt(process.env.CREATED_STATUS_CODE);
     response.message = movie;
@@ -82,7 +82,7 @@ const addOne = function (req, res) {
 const deleteOne = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.MOVIE_DELETE_MESSAGE + movieId);
-  const response = { status: "", message: "" };
+  const response = { status: 0, message: {} };
   Movie.findByIdAndDelete(movieId).exec().then(movie => {
     if (movie === null) {
       response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
