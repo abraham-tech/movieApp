@@ -5,10 +5,6 @@ const Movie = require("../data/schemas/moviesModel");
 const partialUpdateOne = function (req, res) {
     console.log(process.env.MOVIE_PARTIAL_UPDATE_MESSAGE + req.params.movieId);
 
-    const onResponse = function (response) {
-        res.status(response.status).json(response.message);
-    };
-
     _updateOne(req, res, function (req, res, movie) {
         movieUpdate(req, res, movie, function (response) {
             res.status(response.status).json(response.message);
