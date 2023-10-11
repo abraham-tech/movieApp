@@ -1,8 +1,5 @@
 require("dotenv").config();
-const {
-    saveWithCallback,
-    MovieFindOneWithCallback
-} = require("./utils");
+const Movie = require("../data/schemas/moviesModel");
 
 
 const partialUpdateOne = function (req, res) {
@@ -21,21 +18,21 @@ const partialUpdateOne = function (req, res) {
 
 const _updateOne = function (req, res, updateMovieCallback) {
     const movieId = req.params.movieId;
-    MovieFindOneWithCallback(movieId, function (err, movie) {
-        const response = { status: parseInt(process.env.OK_STATUS_CODE), message: movie };
-        if (err) {
-            response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
-            response.message = err;
-        } else if (!movie) {
-            response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
-            response.message = { message: process.env.MOVIE_NOT_FOUND };
-        }
-        if (response.status !== parseInt(process.env.OK_STATUS_CODE)) {
-            res.status(response.status).json(response.message);
+
+    const response = { status: "", message: "" };
+    Movie.findById(movieId).exec().then(movie => {
+        if (!movie) {
+            res
+                .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
+                .json({ message: process.env.MOVIE_NOT_FOUND });
         } else {
             updateMovieCallback(req, res, movie, response);
         }
-    });
+    }).catch(err => {
+        res
+            .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
+            .json({ [process.env.MESSAGE]: err });
+    })
 };
 
 
@@ -56,18 +53,19 @@ const movieUpdate = function (req, res, movie, callback) {
 
     movie.set(updateFields);
 
-    saveWithCallback(movie, function (err, updatedMovie) {
-        const response = {
-            status: parseInt(process.env.OK_STATUS_CODE),
-            message: updatedMovie,
-        };
-        if (err) {
-            response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
-            response.message = err;
-        }
+    const response = { status: "", message: "" };
+    movie.save().then(movie => {
+        response.status = parseInt(process.env.OK_STATUS_CODE);
+        response.message = movie;
+
+    }).catch(err => {
+        response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
+        response.message = err;
+
+    }).finally(() => {
         console.log(process.env.SUCCESS_FULL_UPDATE_FOR_A_MOVIE + movie._id);
         callback(response);
-    });
+    })
 };
 
 

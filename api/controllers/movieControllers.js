@@ -1,10 +1,4 @@
 require("dotenv").config();
-const {
-  MovieInsertOneWithCallback,
-  DeleteMovieByIdWithCallback,
-  MovieFindOneWithCallback,
-  movieFindLimitSkipExecWithCallback,
-} = require("./utils");
 const Movie = require("../data/schemas/moviesModel");
 
 const getAll = function (req, res) {

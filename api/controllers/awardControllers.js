@@ -1,61 +1,65 @@
 require("dotenv").config();
 const mongoose = require("mongoose");
-const {
-  findByIdAndUpdateWithCallback,
-  MovieFindOneWithCallback,
-} = require("./utils");
+const Movie = require("../data/schemas/moviesModel");
 
 const awardGet = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.LIST_ALL_AWARDS_FOR_AMOVIE_MESSAGE + movieId);
-  MovieFindOneWithCallback(movieId, function (err, movie) {
-    if (movie === null) {
-      res
-        .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-        .json({ message: process.env.MOVIE_NOT_FOUND });
-      return;
+  const response = { status: "", message: "" };
+  Movie.findById(movieId).exec().then(movie => {
+    if (!movie) {
+      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE)
+      response.message = { message: process.env.MOVIE_NOT_FOUND };
+    } else {
+      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE)
+      response.message = { [process.env.AWARDS]: movie?.awards };
     }
-    if (err) {
-      console.error(err);
-      res
-        .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-        .json({ message: process.env.INTERNAL_SERVER_ERROR });
-    }
-    console.log(process.env.SUCCESS_RETURNED_AWARDS_FOR_A_MOVIE + movieId);
+  }).catch(err => {
+    response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE)
+    response.message = { [process.env.MESSAGE]: err };
+  }).finally(() => {
     res
-      .status(parseInt(process.env.OK_STATUS_CODE))
-      .json({ [process.env.AWARDS]: movie?.awards });
-  });
+      .status(response.status)
+      .json(response.message);
+  })
 };
+
+// const findMovieAndCallCallback = (res, movieId, callback){
+//   Movie.findById(movieId).exec().then(movie => {
+//     if (movie === null) {
+//       res
+//         .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
+//         .json({ message: process.env.MOVIE_NOT_FOUND });
+//     } else {
+//       _updateAwardToMovie(movie, null, res);
+//     }
+//   }).catch(err => {
+//     res
+//       .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
+//       .json({ [process.env.MESSAGE]: err });
+//   })
+// }
 
 const awardAdd = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.ADD_AWARD_MESSAGE + movieId);
-  MovieFindOneWithCallback(movieId, function (err, movie) {
+  const newAward = {
+    name: req.body.name,
+    year: req.body.year,
+  };
+  Movie.findById(movieId).exec().then(movie => {
     if (movie === null) {
       res
         .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-        .json({ [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND });
-      return;
+        .json({ message: process.env.MOVIE_NOT_FOUND });
+    } else {
+      _addAwardToMovie(movie, newAward, res);
     }
-    if (err) {
-      console.error(err);
-      res
-        .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-        .json({ [process.env.MESSAGE]: process.env.INTERNAL_SERVER_ERROR });
-    } else if (!movie) {
-      res
-        .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-        .json({ [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND });
-    }
-
-    const newAward = {
-      name: req.body.name,
-      year: req.body.year,
-    };
-
-    _addAwardToMovie(movie, newAward, res);
-  });
+  }).catch(err => {
+    res
+      .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
+      .json({ [process.env.MESSAGE]: err });
+  })
 };
 
 const deleteOne = function (req, res) {
@@ -63,107 +67,100 @@ const deleteOne = function (req, res) {
   const awardId = req.params.awardId;
   console.log(process.env.DELETE_AWARD_MESSAGE + awardId);
   console.log("movie id and award id ", movieId, awardId);
-  MovieFindOneWithCallback(movieId, function (err, movie) {
-    if (err) {
-      console.error(err);
-      res
-        .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-        .json({ [process.env.MESSAGE]: process.env.INTERNAL_SERVER_ERROR });
-    } else if (!movie) {
+
+  Movie.findById(movieId).exec().then(movie => {
+    if (movie === null) {
       res
         .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-        .json({ [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND });
+        .json({ message: process.env.MOVIE_NOT_FOUND });
+    } else {
+      _removeAwardFromMovie(movie, awardId, res);
     }
-
-    _removeAwardFromMovie(movie, awardId, res);
-  });
+  }).catch(err => {
+    res
+      .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
+      .json({ [process.env.MESSAGE]: err });
+  })
 };
 
 const awardUpdate = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.UPDATE_AWARD_MESSAGE + movieId);
-  MovieFindOneWithCallback(movieId, function (err, movie) {
-    if (err) {
-      console.error(err);
+  const newAward = {
+    name: req.body.name,
+    year: req.body.year,
+  };
+
+  Movie.findById(movieId).exec().then(movie => {
+    if (movie === null) {
       res
-        .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-        .json({ [process.env.MESSAGE]: process.env.INTERNAL_SERVER_ERROR });
-    } else if (!movie) {
-      res
-        .status(parseInt(process.env.OK_STATUS_CODE))
-        .json({ [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND });
+        .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
+        .json({ message: process.env.MOVIE_NOT_FOUND });
+    } else {
+      _updateAwardToMovie(movie, newAward, res);
     }
-
-    const newAward = {
-      name: req.body.name,
-      year: req.body.year,
-    };
-
-    _updateAwardToMovie(movie, newAward, res);
-  });
+  }).catch(err => {
+    res
+      .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
+      .json({ [process.env.MESSAGE]: err });
+  })
 };
 
 const deleteAll = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.DELETE_ALL_AWARDS_MESSAGE + movieId);
-  MovieFindOneWithCallback(movieId, function (err, movie) {
-    if (err) {
-      console.error(err);
-      res
-        .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-        .json({ [process.env.MESSAGE]: process.env.INTERNAL_SERVER_ERROR });
-    } else if (!movie) {
+
+  // findMovieAndCallCallback(res, movieId, );
+
+  Movie.findById(movieId).exec().then(movie => {
+    if (movie === null) {
       res
         .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-        .json({ [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND });
+        .json({ message: process.env.MOVIE_NOT_FOUND });
+    } else {
+      _updateAwardToMovie(movie, null, res);
     }
-
-    _updateAwardToMovie(movie, null, res);
-  });
+  }).catch(err => {
+    res
+      .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
+      .json({ [process.env.MESSAGE]: err });
+  })
 };
 
 const _removeAwardFromMovie = function (movie, awardId, res) {
-  findByIdAndUpdateWithCallback(
+
+  const response = { status: "", message: "" };
+
+  Movie.findByIdAndUpdate(
     { _id: new mongoose.Types.ObjectId(movie._id) },
     { $unset: { "awards.$[elem]": 1 }, new: true },
-    { arrayFilters: [{ "elem._id": new mongoose.Types.ObjectId(awardId) }] },
-    function (err, movie) {
-      if (err) {
-        console.error(err);
-        res
-          .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-          .json({ [process.env.MESSAGE]: process.env.INTERNAL_SERVER_ERROR });
-      } else {
-        console.log(process.env.SUCCESS_DELETED_AWARD + awardId);
-        res.status(parseInt(process.env.OK_STATUS_CODE)).json(movie);
-      }
-    }
-  );
+    { arrayFilters: [{ "elem._id": new mongoose.Types.ObjectId(awardId) }] }).then(movie => {
+      response.status = process.env.OK_STATUS_CODE;
+      response.message = movie;
+    }).catch(err => {
+      response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE)
+      response.message = { [process.env.MESSAGE]: err };
+    }).finally(() => {
+      res
+        .status(response.status)
+        .json(response.message);
+    })
 };
 
 const _addAwardToMovie = function (movie, newAward, res) {
   movie.awards.push(newAward);
-  findByIdAndUpdateWithCallback(
-    movie._id,
-    movie,
-    { new: true, overwrite: true },
-    function (err, movie) {
-      if (movie === null) {
-        res
-          .status(parseInt(process.env.NOT_FOUND_STATUS_CODE))
-          .json({ [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND });
-      }
-      if (err) {
-        console.error(err);
-        res
-          .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-          .json({ [process.env.MESSAGE]: process.env.INTERNAL_SERVER_ERROR });
-      } else {
-        console.log(process.env.SUCCESS_ADD_AWARD_TO_MOVIE + movie._id);
-        res.status(parseInt(process.env.OK_STATUS_CODE)).json(movie);
-      }
-    }
-  );
+  const response = { status: "", message: "" };
+  Movie.findByIdAndUpdate(movie._id, movie, { new: true, overwrite: true }).then(movie => {
+    response.status = process.env.OK_STATUS_CODE;
+    response.message = movie;
+  }).catch(err => {
+    response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
+    response.message = { message: err }
+  }).finally(() => {
+    res
+      .status(response.status)
+      .json(response.message);
+  });
 };
 
 const _updateAwardToMovie = function (movie, newAward, res) {
@@ -172,24 +169,19 @@ const _updateAwardToMovie = function (movie, newAward, res) {
   } else {
     movie.awards = newAward;
   }
-  findByIdAndUpdateWithCallback(
-    movie._id,
-    movie,
-    { new: true, overwrite: true },
-    function (err, movie) {
-      if (err) {
-        console.error(err);
-        res
-          .status(parseInt(process.env.SERVER_ERROR_STATUS_CODE))
-          .json({ [process.env.MESSAGE]: process.env.INTERNAL_SERVER_ERROR });
-      } else {
-        console.log(process.env.SUCCESS_UPDATED_AWARD + movie._id);
-        res
-          .status(parseInt(process.env.OK_STATUS_CODE))
-          .json({ [process.env.MESSAGE]: process.env.SUCCESS });
-      }
-    }
-  );
+
+  const response = { status: "", message: "" };
+  Movie.findByIdAndUpdate(movie._id, movie, { new: true, overwrite: true }).then(movie => {
+    response.status = parseInt(process.env.OK_STATUS_CODE)
+    response.message = movie;
+  }).catch(err => {
+    response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE)
+    response.message = { [process.env.MESSAGE]: err };
+  }).finally(() => {
+    res
+      .status(response.status)
+      .json(response.message);
+  })
 };
 
 module.exports = {
