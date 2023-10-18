@@ -2,16 +2,24 @@ require("dotenv").config();
 const Movie = require("../data/schemas/moviesModel");
 
 const getAll = function (req, res) {
-  let offset = req.query.offset;
-  let count = req.query.count;
+  let offset = 0;
+  let count = 5;
+  const maxCount = 10;
+
+  if (req.query && req.query.offset) {
+    offset = parseInt(req.query.offset);
+  }
+  if (req.query && req.query.count) {
+    count = parseInt(req.query.count);
+  }
   const response = {
     status: parseInt(process.env.OK_STATUS_CODE),
     message: process.env.SUCCESS
   };
-  if (isNaN(req.query.offset) || isNaN(req.query.count)) {
-    res.status(parseInt(process.env.BAD_REQUEST_STATUS_CODE)).json({ [process.env.MESSAGE]: process.env.INVALID_COUNT_OR_OFFSET });
-    return;
-  }
+  // if (isNaN(req.query.offset) || isNaN(req.query.count)) {
+  //   res.status(parseInt(process.env.BAD_REQUEST_STATUS_CODE)).json({ [process.env.MESSAGE]: process.env.INVALID_COUNT_OR_OFFSET });
+  //   return;
+  // }
   if (req.query && req.query.offset) {
     offset = parseInt(req.query.offset, process.env.BASE_TEN);
   }
