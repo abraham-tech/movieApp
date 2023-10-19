@@ -9,5 +9,5 @@ const movieSchema = mongoose.Schema({
   awards: [awardSchema],
 });
 
-mongoose.model(process.env.MOVIE, movieSchema);
+// mongoose.model(process.env.MOVIE, movieSchema);
 module.exports = mongoose.model(process.env.MOVIE, movieSchema);

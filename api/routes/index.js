@@ -3,6 +3,7 @@ const router = express.Router();
 const movieControllers = require("../controllers/movieControllers");
 const awardControllers = require("../controllers/awardControllers");
 const movieUpdateControllers = require("../controllers/movieUpdateControllers");
+const userControllers = require("../controllers/userControllers");
 const {
   validateIdMiddleware,
   validateIdsMiddleware,
@@ -33,5 +34,16 @@ router
 router
   .route("/movies/:movieId/awards/:awardId")
   .delete(awardControllers.deleteOne);
+
+
+router
+  .route("/users/login")
+  .post(userControllers.login);
+  
+router
+  .route("/users")
+  .post(userControllers.register);
+
+
 
 module.exports = router;
