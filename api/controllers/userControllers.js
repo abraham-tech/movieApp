@@ -3,30 +3,65 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
-const register = (req, res) => {
-
-    if (req.body.username && req.body.password) {
-        let username = req.body.username;
-        let name = req.body.name;
-        let password = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10));
-
-        const response = { status: 0, message: {} };
-        const newUser = {
-            username: username,
-            name: name,
-            password: password
-        }
-        User.create(newUser).then(user => {
-            response.status = parseInt(process.env.CREATED_STATUS_CODE);
-            response.message = user;
-        }).catch(err => {
-            response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
-            response.message = process.env.INTERNAL_SERVER_ERROR;
-        }).finally(() => {
-            res.status(response.status).json(response.message);
-        })
-    }
+const _setErrorResponse = (response, status, error) => {
+    response.status = status;
+    response.message = error;
 }
+
+const _createUser = (newUser) => {
+    return User.create(newUser);
+}
+
+const _createResponse = (status, message) => {
+    return { "status": status, "message": message };
+}
+
+const _createNewUser = (username, name, password = "") => {
+    return { "username": username, "name": name, "password": password };
+}
+
+const _setResponse = (response, savedUser) => {
+    console.log("responst ", response, "message ", savedUser);
+    response.message = savedUser;
+}
+
+const _generateSalt = () => {
+    return bcrypt.genSalt(parseInt(process.env.SALT_GENERATION_COST));
+}
+
+const _generateHash = (password, salt) => {
+    return bcrypt.hash(password, salt)
+}
+
+const _setPassword = (newUser, password) => {
+    return new Promise((resolve, reject) => {
+        if (!password) {
+            reject();
+        } else {
+            newUser.password = password;
+            resolve();
+        }
+    })
+}
+
+const _sendResponse = (res, response) => {
+    console.log("response: r", response,);
+    res.status(response.status).json(response.message);
+}
+
+const register = (req, res) => {
+    const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
+    const newUser = _createNewUser(req.body.username, req.body.name);
+
+    _generateSalt()
+        .then(salt => _generateHash(req.body.password, salt))
+        .then(hashedPassword => _setPassword(newUser, hashedPassword))
+        .then(() => _createUser(newUser))
+        .then(savedUser => _setResponse(response, savedUser))
+        .catch(error => _setErrorResponse(response, process.env.INTERNAL_SERVER_ERROR, error))
+        .finally(() => _sendResponse(res, response))
+}
+
 
 const login = (req, res) => {
     let username = req.body.username;
