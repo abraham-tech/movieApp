@@ -2,6 +2,8 @@ require("dotenv").config();
 const mongoose = require("mongoose");
 const Movie = require("../data/schemas/moviesModel");
 
+
+
 const awardGet = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.LIST_ALL_AWARDS_FOR_AMOVIE_MESSAGE + movieId);

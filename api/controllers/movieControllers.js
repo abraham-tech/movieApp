@@ -1,66 +1,76 @@
 require("dotenv").config();
+const { response } = require("express");
 const Movie = require("../data/schemas/moviesModel");
 
+const _createResponse = (status, message) => {
+  return { "status": status, "message": message };
+}
+
+const _findMovies = (offset, count) => {
+  return Movie.find().skip(offset).limit(count).exec();
+};
+
+
+const _handleSuccess = (response, movies) => {
+  response.status = parseInt(process.env.OK_STATUS_CODE);
+  response.message = movies;
+};
+
+const _handleError = (err) => {
+  console.log(err);
+  response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
+  response.message = err;
+};
+
+const _sendResponse = (res, response) => {
+  res.status(response.status).json(response.message);
+};
+
 const getAll = function (req, res) {
-  let offset = 0;
-  let count = 5;
-  const maxCount = 10;
+  const offset = parseInt(req.query.offset) || 0;
+  const count = parseInt(req.query.count) || 5;
+  const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
 
-  if (req.query && req.query.offset) {
-    offset = parseInt(req.query.offset);
-  }
-  if (req.query && req.query.count) {
-    count = parseInt(req.query.count);
-  }
-  const response = {
-    status: parseInt(process.env.OK_STATUS_CODE),
-    message: process.env.SUCCESS
-  };
-  // if (isNaN(req.query.offset) || isNaN(req.query.count)) {
-  //   res.status(parseInt(process.env.BAD_REQUEST_STATUS_CODE)).json({ [process.env.MESSAGE]: process.env.INVALID_COUNT_OR_OFFSET });
-  //   return;
-  // }
-  if (req.query && req.query.offset) {
-    offset = parseInt(req.query.offset, process.env.BASE_TEN);
-  }
-  if (req.query && req.query.count) {
-    offset = parseInt(req.query.count, process.env.BASE_TEN);
-  }
+  _findMovies(offset, count)
+    .then(movies => _handleSuccess(response, movies))
+    .catch(error => _handleError(response, error))
+    .finally(() => _sendResponse(res, response))
+};
 
-  Movie.find().skip(offset).limit(count).exec().then(movies => {
-    response.status = parseInt(process.env.OK_STATUS_CODE);
-    response.message = movies;
 
-  }).catch(err => {
-    response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
-    response.message = err;
+const _findMovieById = (movieId) => {
+  return Movie.findById(movieId).exec();
+}
 
-  }).finally(() => {
-    res.status(response.status).json(response.message);
+const _checkIfMovieFound = (movie) => {
+  return new Promise((resolve, reject) => {
+    if (!movie) {
+      reject();
+    } else {
+      resolve(movie);
+    }
   })
+}
+
+const _handleMovieNotFound = (res, response) => {
+  response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
+  response.message = { [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND };
+  _sendResponse(res, response)
 };
 
 const getOne = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.GET_A_MOVIE_MESSAGE + movieId);
-  const response = { status: 0, message: {} };
-  Movie.findById(movieId).exec().then(movie => {
-    if (!movie) {
-      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
-      response.message = { [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND };
-    } else {
-      console.log(process.env.SUCCESS_RETURNED_A_MOVIE + movieId);
-      response.status = parseInt(process.env.OK_STATUS_CODE);
-      response.message = movie;
-    }
-  }).catch(err => {
-    console.error(err);
-    response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
-    response.message = process.env.MOVIE_NOT_FOUND;
-  }).finally(() => {
-    res.status(response.status).json(response.message);
-  });
+  const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
+
+  _findMovieById(movieId)
+    .then(movie => _checkIfMovieFound(movie))
+    .catch(() => _handleMovieNotFound(res, response))
+    .then(movie => _handleSuccess(response, movie))
+    .catch(error => _handleError(response, error))
+    .finally(() => _sendResponse(res, response))
 };
+
 
 const addOne = function (req, res) {
   const newMovie = {

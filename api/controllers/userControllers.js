@@ -3,6 +3,7 @@ const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 require("dotenv").config();
 
+
 const _setErrorResponse = (response, status, error) => {
     response.status = status;
     response.message = error;
@@ -49,6 +50,52 @@ const _sendResponse = (res, response) => {
     res.status(response.status).json(response.message);
 }
 
+
+
+const _generateToken = (user) => {
+    console.log("user tttt", user)
+    return new Promise((resolve, reject) => {
+        jwt.sign({ username: user.username }, process.env.SECRTE_KEY, { expiresIn: process.env.TOKEN_EXPIRE_TIME }, (err, token) => {
+            if (err) {
+                reject(err);
+            } else {
+                user.token = token;
+                resolve(user);
+            }
+        });
+    });
+};
+
+const _findUser = (username) => {
+    return User.findOne({ username }).exec();
+};
+
+const _comparePassword = (password, user) => {
+    return new Promise((resolve, reject) => {
+        if (user && bcrypt.compareSync(password, user.password)) {
+            resolve(user);
+        } else {
+            reject('Invalid credentials');
+        }
+    });
+};
+
+const _createResponseWithToken = (user) => {
+    return new Promise((resolve, reject) => {
+        if (!user) {
+            reject();
+        } else {
+            const userWithToken = {
+                name: user.name,
+                userName: user.username,
+                token: user.token,
+            };
+            resolve(userWithToken);
+        }
+    })
+}
+
+
 const register = (req, res) => {
     const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
     const newUser = _createNewUser(req.body.username, req.body.name);
@@ -64,34 +111,17 @@ const register = (req, res) => {
 
 
 const login = (req, res) => {
-    let username = req.body.username;
-    let password = req.body.password;
-    const response = { status: 0, message: {} };
+    const { username, password } = req.body;
+    const response = _createResponse(parseInt(process.env.OK_STATUS_CODE), {});
 
-    User.findOne({ username: username }).exec().then(user => {
-        if (user && bcrypt.compareSync(password, user.password)) {
-            let token = jwt.sign({ username: user.name }, process.env.SECRTE_KEY, { expiresIn: 3600 });
-            const response = {
-                name: user.name,
-                userName: user.username,
-                token: token
-            };
-            res.status(200).json(response);
-
-        } else {
-            res.status(process.env.LOGIN_FAILD_STATUS_CODE).json({
-                [process.env.MESSAGE]: process.env.LOGIN_FAILD
-            });
-        }
-
-    }).catch(err => {
-        console.log(err);
-        res.status(process.env.LOGIN_FAILD_STATUS_CODE).json({
-            [process.env.MESSAGE]: process.env.LOGIN_FAILD
-        });
-    })
-}
-
+    _findUser(username)
+        .then(user => _comparePassword(password, user))
+        .then(user => _generateToken(user))
+        .then(user => _createResponseWithToken(user))
+        .then(userWithToken => _setResponse(response, userWithToken))
+        .catch(error => _setErrorResponse(response, process.env.LOGIN_FAILED_STATUS_CODE, error))
+        .finally(() => _sendResponse(res, response));
+};
 
 module.exports = {
     register,
