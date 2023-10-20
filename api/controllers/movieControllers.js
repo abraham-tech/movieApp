@@ -1,5 +1,4 @@
 require("dotenv").config();
-const { response } = require("express");
 const Movie = require("../data/schemas/moviesModel");
 
 const _createResponse = (status, message) => {
@@ -16,7 +15,7 @@ const _handleSuccess = (response, message) => {
   response.message = message;
 };
 
-const _handleError = (response, err) => {
+const _handleError = (err, response) => {
   console.log(err);
   response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
   response.message = err;
@@ -55,18 +54,7 @@ const _checkIfMovieIsDeleted = (movie) => {
 const _handleMovieNotFound = (res, response) => {
   response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
   response.message = { [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND };
-  // _sendResponse(res, response)
-};
-
-const getAll = function (req, res) {
-  const offset = parseInt(req.query.offset) || 0;
-  const count = parseInt(req.query.count) || 5;
-  const response = _createResponse(process.env.OK_STATUS_CODE, {});
-
-  _findMovies(offset, count)
-    .then(movies => _handleSuccess(response, movies))
-    .catch(error => _handleError(response, error))
-    .finally(() => _sendResponse(res, response))
+  res.status(response.status).json(response.message);
 };
 
 const _createMovie = (newMovie) => {
@@ -77,8 +65,34 @@ const _findMovieByIdAndDelete = (movieId) => {
   return Movie.findByIdAndDelete(movieId).exec();
 }
 
-const getOne = function (req, res) {
-  const movieId = req.params.movieId;
+const _getMovieFromRequestBody = (req) => {
+  return {
+    title: req.body.title,
+    year: req.body.year,
+    imdbRating: req.body.imdbRating,
+  }
+};
+
+const _getQueryStrings = (req) => {
+  return { offset: req.query.offset || 0, count: req.query.count || 5 };
+};
+
+const getAll = (req, res) => {
+  const { offset, count } = _getQueryStrings(req);
+  const response = _createResponse(process.env.OK_STATUS_CODE, {});
+
+  _findMovies(offset, count)
+    .then(movies => _handleSuccess(response, movies))
+    .catch(error => _handleError(error, response))
+    .finally(() => _sendResponse(res, response))
+};
+
+const _getMovieIdFromRequest = (req) => {
+  return req.params.movieId;
+}
+
+const getOne = (req, res) => {
+  const movieId = _getMovieIdFromRequest(req);
   console.log(process.env.GET_A_MOVIE_MESSAGE + movieId);
   const response = _createResponse(process.env.OK_STATUS_CODE, {});
 
@@ -86,17 +100,9 @@ const getOne = function (req, res) {
     .then(movie => _checkIfMovieFound(movie))
     .catch(() => _handleMovieNotFound(res, response))
     .then(movie => _handleSuccess(response, movie))
-    .catch(error => _handleError(response, error))
+    .catch(error => _handleError(error, response))
     .finally(() => _sendResponse(res, response))
 };
-
-const _getMovieFromRequestBody = (req) => {
-  return {
-    title: req.body.title,
-    year: req.body.year,
-    imdbRating: req.body.imdbRating,
-  }
-}
 
 
 const addOne = function (req, res) {
@@ -106,13 +112,13 @@ const addOne = function (req, res) {
 
   _createMovie(newMovie)
     .then(movie => _handleSuccess(response, movie))
-    .catch(error => _handleError(response, error))
+    .catch(error => _handleError(error, response))
     .finally(() => _sendResponse(res, response));
 };
 
 
 const deleteOne = function (req, res) {
-  const movieId = req.params.movieId;
+  const movieId = _getMovieIdFromRequest(req);
   console.log(process.env.MOVIE_DELETE_MESSAGE + movieId);
   const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
 
@@ -120,7 +126,7 @@ const deleteOne = function (req, res) {
     .then(movie => _checkIfMovieIsDeleted(movie))
     .then(movie => _handleSuccess(response, movie))
     .catch(() => _handleMovieNotFound(res, response))
-    .catch(error => _handleError(response, error))
+    .catch(error => _handleError(error, response))
     .finally(() => _sendResponse(res, response));
 };
 
