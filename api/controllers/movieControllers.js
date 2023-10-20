@@ -11,12 +11,12 @@ const _findMovies = (offset, count) => {
 };
 
 
-const _handleSuccess = (response, movies) => {
+const _handleSuccess = (response, message) => {
   response.status = parseInt(process.env.OK_STATUS_CODE);
-  response.message = movies;
+  response.message = message;
 };
 
-const _handleError = (err) => {
+const _handleError = (response, err) => {
   console.log(err);
   response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
   response.message = err;
@@ -24,17 +24,6 @@ const _handleError = (err) => {
 
 const _sendResponse = (res, response) => {
   res.status(response.status).json(response.message);
-};
-
-const getAll = function (req, res) {
-  const offset = parseInt(req.query.offset) || 0;
-  const count = parseInt(req.query.count) || 5;
-  const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
-
-  _findMovies(offset, count)
-    .then(movies => _handleSuccess(response, movies))
-    .catch(error => _handleError(response, error))
-    .finally(() => _sendResponse(res, response))
 };
 
 
@@ -52,16 +41,46 @@ const _checkIfMovieFound = (movie) => {
   })
 }
 
+const _checkIfMovieIsDeleted = (movie) => {
+  return new Promise((resolve, reject) => {
+    if (!movie) {
+      reject();
+    } else {
+      resolve(movie);
+    }
+  })
+}
+
+
 const _handleMovieNotFound = (res, response) => {
   response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
   response.message = { [process.env.MESSAGE]: process.env.MOVIE_NOT_FOUND };
-  _sendResponse(res, response)
+  // _sendResponse(res, response)
 };
+
+const getAll = function (req, res) {
+  const offset = parseInt(req.query.offset) || 0;
+  const count = parseInt(req.query.count) || 5;
+  const response = _createResponse(process.env.OK_STATUS_CODE, {});
+
+  _findMovies(offset, count)
+    .then(movies => _handleSuccess(response, movies))
+    .catch(error => _handleError(response, error))
+    .finally(() => _sendResponse(res, response))
+};
+
+const _createMovie = (newMovie) => {
+  return Movie.create(newMovie)
+}
+
+const _findMovieByIdAndDelete = (movieId) => {
+  return Movie.findByIdAndDelete(movieId).exec();
+}
 
 const getOne = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.GET_A_MOVIE_MESSAGE + movieId);
-  const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
+  const response = _createResponse(process.env.OK_STATUS_CODE, {});
 
   _findMovieById(movieId)
     .then(movie => _checkIfMovieFound(movie))
@@ -71,54 +90,38 @@ const getOne = function (req, res) {
     .finally(() => _sendResponse(res, response))
 };
 
-
-const addOne = function (req, res) {
-  const newMovie = {
+const _getMovieFromRequestBody = (req) => {
+  return {
     title: req.body.title,
     year: req.body.year,
     imdbRating: req.body.imdbRating,
-  };
+  }
+}
+
+
+const addOne = function (req, res) {
+  const newMovie = _getMovieFromRequestBody(req);
   console.log(process.env.MOVIE_CREATE_MESSAGE + JSON.stringify(newMovie));
+  const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
 
-  const response = { status: 0, message: {} };
-  Movie.create(newMovie).then(movie => {
-    response.status = parseInt(process.env.CREATED_STATUS_CODE);
-    response.message = movie;
-  }).catch(err => {
-    console.error(process.env.ERROR_CREATING_MOVIE, err);
-    response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
-    response.message = { message: err }
-  }).finally(() => {
-    res
-      .status(response.status)
-      .json(response.message);
-
-  });
+  _createMovie(newMovie)
+    .then(movie => _handleSuccess(response, movie))
+    .catch(error => _handleError(response, error))
+    .finally(() => _sendResponse(res, response));
 };
 
 
 const deleteOne = function (req, res) {
   const movieId = req.params.movieId;
   console.log(process.env.MOVIE_DELETE_MESSAGE + movieId);
-  const response = { status: 0, message: {} };
-  Movie.findByIdAndDelete(movieId).exec().then(movie => {
-    if (movie === null) {
-      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE);
-      response.message = process.env.MOVIE_NOT_FOUND;
-    } else {
-      response.status = parseInt(process.env.OK_STATUS_CODE);
-      response.message = movie;
-    }
+  const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
 
-  }).catch(err => {
-    response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE);
-    response.message = err;
-
-  }).finally(() => {
-    res
-      .status(response.status)
-      .json({ [process.env.MESSAGE]: response.message });
-  });
+  _findMovieByIdAndDelete(movieId)
+    .then(movie => _checkIfMovieIsDeleted(movie))
+    .then(movie => _handleSuccess(response, movie))
+    .catch(() => _handleMovieNotFound(res, response))
+    .catch(error => _handleError(response, error))
+    .finally(() => _sendResponse(res, response));
 };
 
 module.exports = {
