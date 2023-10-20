@@ -11,11 +11,12 @@ const register = (req, res) => {
         let password = bcrypt.hashSync(req.body.password, bcrypt.genSaltSync(10));
 
         const response = { status: 0, message: {} };
-        User.create({
+        const newUser = {
             username: username,
             name: name,
             password: password
-        }).then(user => {
+        }
+        User.create(newUser).then(user => {
             response.status = parseInt(process.env.CREATED_STATUS_CODE);
             response.message = user;
         }).catch(err => {
@@ -28,17 +29,19 @@ const register = (req, res) => {
 }
 
 const login = (req, res) => {
-    console.log("Loggin in user");
     let username = req.body.username;
     let password = req.body.password;
     const response = { status: 0, message: {} };
 
     User.findOne({ username: username }).exec().then(user => {
         if (user && bcrypt.compareSync(password, user.password)) {
-            // let token = jwt.sign({ username: user.name }, process.env.SECRTE_KEY, { expiresIn: 3600 });
-            // console.log(token);
-            // res.status(200).json({ success: true, token: token });
-            res.status(200).json({ success: true, message: "done" });
+            let token = jwt.sign({ username: user.name }, process.env.SECRTE_KEY, { expiresIn: 3600 });
+            const response = {
+                name: user.name,
+                userName: user.username,
+                token: token
+            };
+            res.status(200).json(response);
 
         } else {
             res.status(process.env.LOGIN_FAILD_STATUS_CODE).json({

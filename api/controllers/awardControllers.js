@@ -11,8 +11,8 @@ const awardGet = function (req, res) {
       response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE)
       response.message = { message: process.env.MOVIE_NOT_FOUND };
     } else {
-      response.status = parseInt(process.env.NOT_FOUND_STATUS_CODE)
-      response.message = { [process.env.AWARDS]: movie?.awards };
+      response.status = parseInt(process.env.OK_STATUS_CODE)
+      response.message = movie?.awards;
     }
   }).catch(err => {
     response.status = parseInt(process.env.SERVER_ERROR_STATUS_CODE)

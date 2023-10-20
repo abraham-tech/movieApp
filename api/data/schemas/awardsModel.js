@@ -6,5 +6,5 @@ const awardSchema = mongoose.Schema({
   year: Number,
 });
 
-mongoose.model(process.env.AWARD, awardSchema);
+// mongoose.model(process.env.AWARD, awardSchema);
 module.exports = awardSchema;
