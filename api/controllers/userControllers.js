@@ -22,7 +22,6 @@ const _createNewUser = (username, name, password = "") => {
 }
 
 const _setResponse = (response, savedUser) => {
-    console.log("responst ", response, "message ", savedUser);
     response.message = savedUser;
 }
 
@@ -46,14 +45,12 @@ const _setPassword = (newUser, password) => {
 }
 
 const _sendResponse = (res, response) => {
-    console.log("response: r", response,);
     res.status(response.status).json(response.message);
 }
 
 
 
 const _generateToken = (user) => {
-    console.log("user tttt", user)
     return new Promise((resolve, reject) => {
         jwt.sign({ username: user.username }, process.env.SECRTE_KEY, { expiresIn: process.env.TOKEN_EXPIRE_TIME }, (err, token) => {
             if (err) {

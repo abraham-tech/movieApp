@@ -14,6 +14,13 @@ const _getAwardIdFromRequest = (req) => {
   return req.params.awardId;
 }
 
+const _getAwardFromRequestBody = (req) => {
+  return {
+    name: req.body.name,
+    year: req.body.year,
+  }
+}
+
 const _findMovieById = (movieId) => {
   return Movie.findById(movieId).exec();
 };
@@ -62,6 +69,12 @@ const _sendResponse = (res, response) => {
   res.status(response.status).json(response.message);
 };
 
+const _addAwardToMovie = (movie, award) => {
+  movie.awards.push(award);
+  return movie.save();
+}
+
+
 
 const awardGet = function (req, res) {
   const movieId = _getMovieIdFromRequest(req);
@@ -76,20 +89,12 @@ const awardGet = function (req, res) {
     .finally(() => _sendResponse(res, response))
 };
 
-const _addAwardToMovie = (movie, award) => {
-  movie.awards.push(award);
-  return movie.save();
-}
-
 
 const awardAdd = function (req, res) {
   const movieId = _getMovieIdFromRequest(req);
   console.log(process.env.ADD_AWARD_MESSAGE + movieId);
   const response = _createResponse(process.env.OK_STATUS_CODE, {});
-  const newAward = {
-    name: req.body.name,
-    year: req.body.year,
-  };
+  const newAward = _getAwardFromRequestBody(req);
 
   _findMovieById(movieId)
     .then(movie => _checkIfMovieFound(movie))
@@ -124,10 +129,7 @@ const deleteOne = function (req, res) {
 const awardUpdate = function (req, res) {
   const movieId = _getMovieIdFromRequest(req);
   console.log(process.env.UPDATE_AWARD_MESSAGE + movieId);
-  const newAward = {
-    name: req.body.name,
-    year: req.body.year,
-  };
+  const newAward = _getAwardFromRequestBody(req);
   const response = _createResponse(process.env.OK_STATUS_CODE, {});
 
   _findMovieById(movieId)

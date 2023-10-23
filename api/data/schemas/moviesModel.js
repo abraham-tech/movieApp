@@ -5,7 +5,7 @@ const awardSchema = require("./awardsModel");
 const movieSchema = mongoose.Schema({
   title: { type: String, required: true },
   year: Number,
-  imdbRating: { type: Number, min: 0, max: 10 },
+  imdbRating: { type: Number },
   awards: [awardSchema],
 });
 
