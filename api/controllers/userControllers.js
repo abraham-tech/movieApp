@@ -45,6 +45,10 @@ const _setPassword = (newUser, password) => {
 }
 
 const _sendResponse = (res, response) => {
+    if (response.message === process.env.INVALID_CREDENTIALS) {
+        response.status = process.env.BAD_REQUEST_STATUS_CODE;
+        response.message = response.message;
+    }
     res.status(response.status).json(response.message);
 }
 
@@ -72,7 +76,7 @@ const _comparePassword = (password, user) => {
         if (user && bcrypt.compareSync(password, user.password)) {
             resolve(user);
         } else {
-            reject('Invalid credentials');
+            reject(process.env.INVALID_CREDENTIALS);
         }
     });
 };

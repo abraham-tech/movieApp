@@ -2,7 +2,7 @@
   "name": "lab04-03",
   "version": "1.0.0",
   "description": "PHP project",
-  "main": "index.js",
+  "main": "app.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "start": "npm run backend | npm run frontend",

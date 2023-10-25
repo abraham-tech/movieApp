@@ -3,8 +3,6 @@ require("./schemas/moviesModel");
 require("dotenv").config();
 
 mongoose.connect(process.env.DB_URL, {
-  useNewUrlParser: true,
-  useUnifiedTopology: true,
 });
 
 mongoose.connection.on("connected", function () {
