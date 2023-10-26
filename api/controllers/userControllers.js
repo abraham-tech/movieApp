@@ -60,8 +60,7 @@ const _generateToken = (user) => {
             if (err) {
                 reject(err);
             } else {
-                user.token = token;
-                resolve(user);
+                resolve(token);
             }
         });
     });
@@ -81,17 +80,12 @@ const _comparePassword = (password, user) => {
     });
 };
 
-const _createResponseWithToken = (user) => {
+const _createResponseWithToken = (token) => {
     return new Promise((resolve, reject) => {
-        if (!user) {
+        if (!token) {
             reject();
         } else {
-            const userWithToken = {
-                name: user.name,
-                userName: user.username,
-                token: user.token,
-            };
-            resolve(userWithToken);
+            resolve({ "token": token });
         }
     })
 }
@@ -118,8 +112,8 @@ const login = (req, res) => {
     _findUser(username)
         .then(user => _comparePassword(password, user))
         .then(user => _generateToken(user))
-        .then(user => _createResponseWithToken(user))
-        .then(userWithToken => _setResponse(response, userWithToken))
+        .then(token => _createResponseWithToken(token))
+        .then(message => _setResponse(response, message))
         .catch(error => _setErrorResponse(response, process.env.LOGIN_FAILED_STATUS_CODE, error))
         .finally(() => _sendResponse(res, response));
 };
