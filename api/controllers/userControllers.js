@@ -48,8 +48,8 @@ const _sendResponse = (res, response) => {
     if (response.message === process.env.INVALID_CREDENTIALS) {
         response.status = process.env.BAD_REQUEST_STATUS_CODE;
         response.message = response.message;
-    }
-    res.status(response.status).json(response.message);
+    } else if (response)
+        res.status(response.status).json(response.message);
 }
 
 
@@ -90,6 +90,16 @@ const _createResponseWithToken = (token) => {
     })
 }
 
+const _checkIfUserFound = (user) => {
+    return new Promise((resolve, reject) => {
+        if (!user) {
+            reject();
+        } else {
+            resolve(user);
+        }
+    })
+}
+
 
 const register = (req, res) => {
     const response = _createResponse(process.env.CREATED_STATUS_CODE, {});
@@ -100,7 +110,7 @@ const register = (req, res) => {
         .then(hashedPassword => _setPassword(newUser, hashedPassword))
         .then(() => _createUser(newUser))
         .then(savedUser => _setResponse(response, savedUser))
-        .catch(error => _setErrorResponse(response, process.env.INTERNAL_SERVER_ERROR, error))
+        .catch(error => _setErrorResponse(response, process.env.REGISTRATION_FAILED_STATUS_CODE, error))
         .finally(() => _sendResponse(res, response))
 }
 
@@ -110,7 +120,9 @@ const login = (req, res) => {
     const response = _createResponse(parseInt(process.env.OK_STATUS_CODE), {});
 
     _findUser(username)
+        .then(user => _checkIfUserFound(user))
         .then(user => _comparePassword(password, user))
+        .catch(error => _setErrorResponse(response, process.env.LOGIN_FAILED_STATUS_CODE, error))
         .then(user => _generateToken(user))
         .then(token => _createResponseWithToken(token))
         .then(message => _setResponse(response, message))
