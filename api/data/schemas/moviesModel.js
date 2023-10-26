@@ -7,6 +7,7 @@ const movieSchema = mongoose.Schema({
   year: Number,
   imdbRating: { type: Number },
   awards: [awardSchema],
+  available: { type: Boolean, default: true }
 });
 
 // mongoose.model(process.env.MOVIE, movieSchema);

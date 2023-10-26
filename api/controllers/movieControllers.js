@@ -70,6 +70,7 @@ const _getMovieFromRequestBody = (req) => {
     title: req.body.title,
     year: req.body.year,
     imdbRating: req.body.imdbRating,
+    available:  req.body.available,
   }
 };
 

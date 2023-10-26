@@ -46,6 +46,9 @@ const movieUpdate = function (req, res, movie, callback) {
     if (req.body.awards) {
         updateFields.awards = req.body.awards;
     }
+    if (req.body.available != null) {
+        updateFields.available = req.body.available;
+    }
 
     movie.set(updateFields);
 
