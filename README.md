@@ -1,6 +1,3 @@
-# Let's create the README file for the user's Movie App project.
-
-readme_content = """
 # Movie App - Backend API
 
 ## Overview
